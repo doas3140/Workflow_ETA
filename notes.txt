@@ -1,0 +1,8 @@
+
+GRU,SimpleRNN after one step of skopt hyperparam optimization throws error:
+    File "/home/dominykas/anaconda3/lib/python3.6/site-packages/keras/layers/recurrent.py", line 401, in states
+        num_states = len(self.cell.state_size)
+    TypeError: object of type 'numpy.int64' has no len()
+
+
+1) When evaluating model should I evaluate across each K-Fold and then return mean?

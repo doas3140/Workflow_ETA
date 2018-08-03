@@ -1,31 +1,54 @@
-import numpy as np
+from keras.preprocessing.sequence import pad_sequences
 from sklearn.model_selection import train_test_split
 
-def preprocess_data(X,Y):
-    # normalize Y
-    Y_mean = Y.mean()
-    Y_std = Y.std()
-    Y = (Y-Y_mean)/Y_std
-    # normalize X
-    X /= 255
-    return X,Y,Y_mean,Y_std
+import numpy as np
+import os
+import keras
 
-def split_data(X,Y,train_split,valid_split,test_split):
-    ''' UNUSED '''
-    if not train_split + valid_split + test_split == 1:
-        raise Exception('Sum of all splits must be equal to 1')
-    X,X_test,Y,Y_test = train_test_split(X,Y,test_size=test_split)
-    left_split = valid_split/(1-test_split) # or valid_split/(train_split+valid_split)
-    X_train,X_valid,Y_train,Y_valid = train_test_split(X,Y,test_size=left_split)
-    return X_train,Y_train, X_valid,Y_valid, X_test,Y_test
 
-def get_data(npy_path,test_split):
-    X,Y = np.load(npy_path)
-    X,Y,Y_mean,Y_std = preprocess_data(X,Y)
-    X,X_test,Y,Y_test = train_test_split(X,Y,test_size=test_split)
-    return X,Y, X_test,Y_test # X,Y - {train set + valid set}
+class DataGenerator(keras.utils.Sequence):
+    def __init__(self, indexes, batch_size, datadir):
+        self.batch_size = batch_size
+        self.indexes = indexes
+        self.batches = []
+        self.index2path = get_index2path_dict(datadir,indexes)
+        self.num = len(self) * batch_size # self.num % batch_size = 0
+        self.on_epoch_start()
 
-def index2data(X,Y,train_index,valid_index):
-    X_train, X_valid = X[train_index], X[valid_index]
-    Y_train, Y_valid = Y[train_index], Y[valid_index]
-    return X_train,Y_train, X_valid, Y_valid
+    def __len__(self): # how many batches
+        return len(self.indexes) // self.batch_size
+
+    def __getitem__(self, batch_index):
+        X = []
+        Y = np.empty((self.batch_size), dtype=int)
+        for i,index in enumerate(self.batches[batch_index]):
+            x, Y[i] = np.load(self.index2path[index])
+            X.append(x)
+        return pad_sequences(X), Y
+
+    def on_epoch_start(self):
+        np.random.shuffle(self.indexes)
+        indexes = self.indexes[ :self.num ]
+        self.batches = np.split( indexes, indices_or_sections=len(self) )
+
+
+def get_index2path_dict(datadir,indexes=[]):
+    ''' if indexes == []: gets all indexes '''
+    index2path = {}
+    folders = [f for f in os.scandir(datadir) if f.is_dir() and f.name != 'json']
+    for folder in folders:
+        files = [f for f in os.scandir(folder) if f.name[-4:] == '.npy']
+        for f in files:
+            index = int(f.name[:-4])
+            if indexes == []:
+                index2path[index] = f.path
+            elif index in indexes:
+                index2path[index] = f.path
+    return index2path
+
+
+def split_indexes(datadir,test_split):
+    index2path = get_index2path_dict(datadir)
+    all_indexes = [int(os.path.basename(path)[:-4]) for path in index2path.values()]
+    data_indexes,test_indexes,_,_ = train_test_split(all_indexes,all_indexes,test_size=test_split)
+    return np.array(data_indexes), np.array(test_indexes)
