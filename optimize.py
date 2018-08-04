@@ -49,9 +49,24 @@ def fitness(**p): # p = { 'p1':0.1,'p2':3,... }
     save_history_plots(history,plotinfo,folderpath=os.path.join(const['plot_dir'],str(num_call)))
     result = history['fitness']['valid']['mean'][-1] # last epoch
     save_best_model(model,result,const)
+    save_info_csv(num_call,result,p,csvpath=os.path.join(const['results_dir'],'skopt_info.csv'))
     num_call += 1
     skopt_history.append(history)
     return result
+
+def save_info_csv(call_nr,result,params,csvpath):
+    # if call_nr == 0: open(csvpath,'w').close()
+    if call_nr == 0:
+        s = 'call_nr,result'
+        for p in params.keys():
+            s += ','+p
+            with open(csvpath,'w') as f:
+                f.write(s+'\n')
+    s = str(call_nr)+','+str(result)
+    for p in params.values():
+        s += ','+str(p)
+    with open(csvpath,'a') as f:
+        f.write(s+'\n')
 
 
 def save_skopt_history_plots(histories,plotinfo,datadir):
@@ -108,12 +123,13 @@ def create_skopt_results_string(search_result,prior_names,savepath=False):
     # print(search_result)
     s = ''
     s += '::: ALL PARAMETERS :::\n'
-    sorted_results = sorted(zip(search_result.func_vals, search_result.x_iters))
+    indexes = np.arange(const['skopt_n_calls'])
+    sorted_results = sorted(zip(search_result.func_vals, indexes, search_result.x_iters))
     for name in prior_names:
         s += '{} '.format(name)
     s += '\n'
-    for fitness_value,parameter_values in sorted_results:
-        s += '{:.8}'.format(fitness_value)
+    for fitness_value,index,parameter_values in sorted_results:
+        s += '{:.8} {:3}'.format(fitness_value,index)
         for x in parameter_values:
             x = str(x)
             if len(x) < 10:

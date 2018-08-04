@@ -4,12 +4,13 @@ from skopt.space import Real, Categorical, Integer
 import os
 import json
 
+
 def get_metadata_dict(datadir):
     jsonpath = os.path.join(datadir,'meta.json')
     return json.loads( open(jsonpath).read() )
 
-datadir = os.path.join(os.getcwd(),'..','tempminidata')
-results_dir = os.path.join(os.getcwd(),'training') # where all the results is stored
+datadir = os.path.join('/mnt/sda1/Datasets/Workflow_ETA/data_prod/tmpDir/tempminidata')
+results_dir = os.path.join(os.getcwd(),'temp') # where all the results is stored
 METADATA = get_metadata_dict(datadir)
 
 const_param = {
@@ -17,7 +18,7 @@ const_param = {
     'Y_mean':METADATA['Y_mean'],
     'Y_std':METADATA['Y_std'],
     # directories
-    'unfiltered_data_dir':os.path.join(os.getcwd(),'..','maindatafolder'),
+    'unfiltered_data_dir':os.path.join('/mnt/sda1/Datasets/Workflow_ETA/data_prod/tmpDir/maindatafolder'),
     'datadir':datadir,
     'results_dir':results_dir,
     'plot_dir':os.path.join(results_dir,'plots'),
@@ -30,7 +31,7 @@ const_param = {
     'test_split':0.2, # % out of whole dataset
     'fitness_result':'mean_squared_error', # result from keras model.history.history dict. Result will always be from validation set.
     'skopt_n_calls':11,
-    'batch_size':8,
+    'batch_size':4,
     # cnn
     'cnn_activation':'relu',
     'cnn_kernel_h':3,

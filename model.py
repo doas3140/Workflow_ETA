@@ -67,27 +67,29 @@ def create_model(p,const,print_summary=False):
     return lstm_model
 
 
-def evaluate_model(model,test_gen, const):
-    metric_values = model.evaluate_generator(test_gen, verbose=0)
-    metric_names = model.metrics_names
-    outputDict = { metric_names[i]:metric_values[i] for i in range(len(metric_names)) }
-    test_predictions = model.predict_generator(test_gen, verbose=0)
-    test_predictions = test_predictions * const['Y_std'] + const['Y_mean']
-    outputDict['prediction_mean'] = test_predictions.mean()
-    outputDict['prediction_std'] = test_predictions.std()
-    return outputDict
-
-
 class EvaluateData(keras.callbacks.Callback):
-    def __init__(self,generator,const,log_word):
+    def __init__(self,generator,log_word):
         self.generator = generator
-        self.const = const
         self.log_word = log_word
 
     def on_epoch_end(self,batch,logs):
-        history = evaluate_model(self.model,self.generator,self.const)
-        for metric_name,value in history.items():
+        metric_values = self.model.evaluate_generator(self.generator, verbose=0)
+        metric_names = self.model.metrics_names
+        for metric_name,value in zip(metric_names,metric_values):
             logs[ self.log_word +'_'+ metric_name ] = value
+
+
+class PredictData(keras.callbacks.Callback):
+    def __init__(self,generator,denormalize_fun,log_word):
+        self.generator = generator
+        self.denormalize = denormalize_fun
+        self.log_word = log_word
+
+    def on_epoch_end(self,batch,logs):
+        predictions = self.model.predict_generator(self.generator, verbose=0)
+        predictions = self.denormalize(predictions)
+        logs[ self.log_word +'_prediction_mean' ] = predictions.mean()
+        logs[ self.log_word +'_prediction_std' ] = predictions.std()
 
 
 def fit_model(model, train_indexes, valid_indexes, test_indexes, const, p, verbose=1):
@@ -98,8 +100,9 @@ def fit_model(model, train_indexes, valid_indexes, test_indexes, const, p, verbo
     callbacks = []
     # tensorboard_logdir_path = p2logdir_path(folder_path=const['tensorboard_dir'],p=p)
     # callbacks.append( tensorboard(tensorboard_logdir_path, batch_size=const['batch_size']) )
-    callbacks.append( EvaluateData(test_gen,const,log_word='test') )
-    callbacks.append( EvaluateData(valid_gen,const,log_word='valid') )
+    callbacks.append( EvaluateData(test_gen,log_word='test') )
+    callbacks.append( PredictData(test_gen,denormalize,log_word='test') )
+    callbacks.append( PredictData(valid_gen,denormalize,log_word='valid') )
     history = model.fit_generator(
                                         generator = train_gen,
                                         epochs = const['epochs'],
@@ -112,7 +115,8 @@ def fit_model(model, train_indexes, valid_indexes, test_indexes, const, p, verbo
     return history.history
 
 
-def denormalize(target_array,const):
+def denormalize(target_array):
+    global const
     return np.array(target_array) * const['Y_std'] + const['Y_mean']
 
 
@@ -166,15 +170,12 @@ def fit_kfold_model(model, data_indexes, test_indexes, const, p, verbose=1): # i
         valid_prediction_std_list.append( history[ 'valid_prediction_std' ] )
     
     train_fitness,valid_fitness,test_fitness = np.mean( train_fitness_list,axis=0 ), np.mean( valid_fitness_list,axis=0 ), np.mean( test_fitness_list,axis=0 )
-    train_std,valid_std,test_std = np.mean( train_std_list,axis=0 ), np.mean( valid_std_list,axis=0 ), np.mean( test_std_list,axis=0 )
+    train_std,valid_std,test_std = np.mean( train_std_list,axis=0 ), np.mean( valid_std_list,axis=0 ), np.mean( test_std_list,axis=0 )    
 
-    print(valid_prediction_mean_list)
-    print(valid_prediction_std_list)
-    print(test_prediction_mean_list)
-    print(test_prediction_std_list)
-
-    print( '\n \t train-mse: {:>10} \t valid-mse: {:>10} \t test-mse: {:>10}'.format(train_fitness[-1],valid_fitness[-1],test_fitness[-1]) )
-    print( ' \t train-std: {:>10} \t valid-std: {:>10} \t test-std: {:>10}'.format(train_std[-1],valid_std[-1],test_std[-1]) )
+    print( '\n \t train-mse: {:>10} \t valid-mse: {:>10} \t test-mse: {:>10}'.format( \
+        train_fitness[-1],valid_fitness[-1],test_fitness[-1]) )
+    print( ' \t train-std: {:>10} \t valid-std: {:>10} \t test-std: {:>10}'.format( \
+        str(timedelta(seconds=train_std[-1])),str(timedelta(seconds=valid_std[-1])),str(timedelta(seconds=test_std[-1]))) )
 
     return {
             'fitness':{

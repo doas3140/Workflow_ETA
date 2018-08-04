@@ -18,15 +18,16 @@ def plot_multiple_mean_std(x,y_dict,y_label,x_label,title,colors_dict,savepath=F
     _, ax = plt.subplots()
     for name,data in y_dict.items():
         mean,std,color = data['mean'],data['std'],colors_dict[name]
-        ax.plot(x, mean, lw = 1, color=color, alpha = 0.8, label = name)
+        ax.plot(x, mean, lw = 3, color=color, alpha = 0.8, label = name)
         y_low = mean - std
         y_high = mean + std
-        ax.fill_between(x, y_low, y_high, color=color, alpha = 0.4)
+        ax.fill_between(x, y_low, y_high, color=color, alpha = 0.1)
     ax.set_title(title)
     ax.set_xlabel(x_label)
     ax.set_ylabel(y_label)
     ax.legend(loc = 'best')
     if savepath: plt.savefig(savepath)
+    plt.close()
 
 
 def save_history_plots(history,plotinfo,folderpath):
