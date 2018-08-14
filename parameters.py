@@ -11,7 +11,10 @@ def get_metadata_dict(datadir):
 
 datadir = os.path.join('/mnt/sda1/Datasets/Workflow_ETA/data_prod/tmpDir/tempminidata')
 results_dir = os.path.join(os.getcwd(),'temp') # where all the results is stored
-METADATA = get_metadata_dict(datadir)
+try:
+    METADATA = get_metadata_dict(datadir)
+except:
+    METADATA = {'Y_mean':0,'Y_std':1}
 
 const_param = {
     # variables

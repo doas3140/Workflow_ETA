@@ -1,3 +1,4 @@
+import keras
 from keras.preprocessing.sequence import pad_sequences
 from sklearn.model_selection import train_test_split
 
@@ -6,8 +7,7 @@ import os
 import keras
 
 
-try:
-    import asdfasdasd
+if keras.__version__[0] == '2':
     class DataGenerator(keras.utils.Sequence):
         def __init__(self, indexes, batch_size, datadir):
             self.batch_size = batch_size
@@ -35,20 +35,19 @@ try:
         
         def generator_function(self):
             return self
-
-except ImportError:
-    # for keras 1.2
+else: # for keras 1.2
     class DataGenerator():
         def __init__(self, indexes, batch_size, datadir):
             self.batch_size = batch_size
             self.indexes = indexes
             self.batches = []
             self.index2path = get_index2path_dict(datadir,indexes)
-            self.num = len(self) * batch_size # self.num % batch_size = 0
+            self.num_batches = len(self.indexes) // self.batch_size
+            self.num = self.num_batches * batch_size # self.num % batch_size = 0
             self.on_epoch_start()
 
-        def __len__(self): # how many batches
-            return len(self.indexes) // self.batch_size
+        def __len__(self): # how many samples
+            return self.num
 
         def __getitem__(self, batch_index):
             X = []
@@ -61,11 +60,11 @@ except ImportError:
         def on_epoch_start(self):
             np.random.shuffle(self.indexes)
             indexes = self.indexes[ :self.num ]
-            self.batches = np.split( indexes, indices_or_sections=len(self) )
+            self.batches = np.split( indexes, indices_or_sections=self.num_batches )
         
         def generator_function(self):
             def generator():
-                for batch_index in range(len(self)):
+                for batch_index in range(self.num_batches):
                     X = []
                     Y = np.empty((self.batch_size), dtype=int)
                     for i,index in enumerate(self.batches[batch_index]):
