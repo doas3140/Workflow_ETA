@@ -73,7 +73,7 @@ class EvaluateData(keras.callbacks.Callback):
         self.log_word = log_word
 
     def on_epoch_end(self,batch,logs):
-        metric_values = self.model.evaluate_generator(self.generator, verbose=0)
+        metric_values = self.model.evaluate_generator(self.generator)
         metric_names = self.model.metrics_names
         for metric_name,value in zip(metric_names,metric_values):
             logs[ self.log_word +'_'+ metric_name ] = value
@@ -86,7 +86,7 @@ class PredictData(keras.callbacks.Callback):
         self.log_word = log_word
 
     def on_epoch_end(self,batch,logs):
-        predictions = self.model.predict_generator(self.generator, verbose=0)
+        predictions = self.model.predict_generator(self.generator)
         predictions = self.denormalize(predictions)
         logs[ self.log_word +'_prediction_mean' ] = predictions.mean()
         logs[ self.log_word +'_prediction_std' ] = predictions.std()

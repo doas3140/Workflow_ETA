@@ -64,6 +64,7 @@ else: # for keras 1.2
         
         def generator_function(self):
             def generator():
+                self.on_epoch_start()
                 for batch_index in range(self.num_batches):
                     X = []
                     Y = np.empty((self.batch_size), dtype=int)

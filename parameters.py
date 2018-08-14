@@ -30,11 +30,11 @@ const_param = {
     # model param
     'loss':'mse',
     'epochs':3,
-    'kfold_split':2,
+    'kfold_split':5,
     'test_split':0.2, # % out of whole dataset
     'fitness_result':'mean_squared_error', # result from keras model.history.history dict. Result will always be from validation set.
     'skopt_n_calls':11,
-    'batch_size':4,
+    'batch_size':16,
     # cnn
     'cnn_activation':'relu',
     'cnn_kernel_h':3,

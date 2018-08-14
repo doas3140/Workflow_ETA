@@ -20,13 +20,16 @@ def main():
     data_indexes, test_indexes = split_indexes(const['datadir'],const['test_split'])
     model = create_model(p,const,print_summary=False)
     keras_histories,history = fit_kfold_model(model, data_indexes, test_indexes, const, p, verbose=1)
-    save_keras_histories(keras_histories,folderpath=os.path.join(const['results_dir'],'keras_histories'),name='keras_histories')
-    save_history_plots(history,plotinfo,folderpath=os.path.join(const['plot_dir']))
+    save_histories(keras_histories,folderpath=os.path.join(const['results_dir'],'keras_histories'),name='keras_histories')
+    save_histories(history,folderpath=os.path.join(const['results_dir'],'plot_histories'),name='plot_history')
+    # save_history_plots(history,plotinfo,folderpath=os.path.join(const['plot_dir']))
     model.save(const['best_model_dir'])
 
-def save_keras_histories(keras_histories,folderpath,name):
+def save_histories(histories,folderpath,name):
     if not os.path.exists(folderpath): os.makedirs(folderpath)
-    pickle.dump(keras_histories,open(os.path.join(folderpath,name+'.pickle'),'wb'))
+    pickle.dump(histories,open(os.path.join(folderpath,name+'.pickle'),'wb'))
+
+
     
 
 if __name__ == '__main__':
