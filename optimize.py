@@ -21,6 +21,7 @@ import json
 import matplotlib.pyplot as plt
 from datetime import timedelta
 import time
+import pickle
 
 
 def main():
@@ -45,14 +46,20 @@ def fitness(**p): # p = { 'p1':0.1,'p2':3,... }
     global const, data_indexes, test_indexes, num_call, skopt_history
     print('\n \t ::: {} SKOPT CALL ::: \n'.format(num_call+1))
     model = create_model(p,const,print_summary=False)
-    history = fit_kfold_model(model, data_indexes, test_indexes, const, p, verbose=1)
+    keras_histories,history = fit_kfold_model(model, data_indexes, test_indexes, const, p, verbose=1)
     save_history_plots(history,plotinfo,folderpath=os.path.join(const['plot_dir'],str(num_call)))
+    save_keras_histories(keras_histories,folderpath=os.path.join(const['results_dir'],'keras_histories'),name=str(num_call))
     result = history['fitness']['valid']['mean'][-1] # last epoch
     save_best_model(model,result,const)
     save_info_csv(num_call,result,p,csvpath=os.path.join(const['results_dir'],'skopt_info.csv'))
     num_call += 1
     skopt_history.append(history)
     return result
+
+def save_keras_histories(keras_histories,folderpath,name):
+    if not os.path.exists(folderpath): os.makedirs(folderpath)
+    pickle.dump(keras_histories,open(os.path.join(folderpath,name+'.pickle'),'wb'))
+
 
 def save_info_csv(call_nr,result,params,csvpath):
     # if call_nr == 0: open(csvpath,'w').close()

@@ -148,12 +148,14 @@ def fit_kfold_model(model, data_indexes, test_indexes, const, p, verbose=1): # i
     valid_std_list = []; train_std_list = []; test_std_list = []; 
     test_prediction_mean_list = []; test_prediction_std_list = []; 
     valid_prediction_mean_list = []; valid_prediction_std_list = []; 
+    keras_histories = []
 
     for i,(index_train, index_valid) in enumerate(KFold(n_splits=const['kfold_split'],shuffle=True).split(data_indexes)):
         print('Fold {}:'.format(i+1))
 
         train_indexes, valid_indexes = data_indexes[ index_train ], data_indexes[ index_valid ] # KFold returns indexes of data_indexes, this returns indexes of data
         history = fit_model(model,train_indexes,valid_indexes,test_indexes,const,p,verbose)
+        keras_histories.append(history)
 
         train_fitness_list.append( history[ const['fitness_result'] ] )
         valid_fitness_list.append( history[ 'val_'+const['fitness_result'] ] )
@@ -177,7 +179,7 @@ def fit_kfold_model(model, data_indexes, test_indexes, const, p, verbose=1): # i
     print( ' \t train-std: {:>10} \t valid-std: {:>10} \t test-std: {:>10}'.format( \
         str(timedelta(seconds=train_std[-1])),str(timedelta(seconds=valid_std[-1])),str(timedelta(seconds=test_std[-1]))) )
 
-    return {
+    return keras_histories,{
             'fitness':{
                     'train':{
                         # 'list':np.array(train_fitness_list),

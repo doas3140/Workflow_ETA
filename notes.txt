@@ -5,4 +5,3 @@ GRU,SimpleRNN after one step of skopt hyperparam optimization throws error:
     TypeError: object of type 'numpy.int64' has no len()
 
 
-1) When evaluating model should I evaluate across each K-Fold and then return mean?
