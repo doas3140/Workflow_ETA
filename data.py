@@ -100,7 +100,7 @@ def get_index2path_dict(datadir,indexes=[]):
         index2path = {}
         folders = [f for f in os.scandir(datadir) if f.is_dir() and f.name != 'json']
         for folder in folders:
-            files = [f for f in os.scandir(folder) if f.name[-4:] == '.npy']
+            files = [f for f in os.scandir(folder.path) if f.name[-4:] == '.npy']
             for f in files:
                 index = int(f.name[:-4])
                 if indexes == []:
