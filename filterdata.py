@@ -12,6 +12,7 @@ from tqdm import tqdm
 
 
 def parsejson(timestamp_path):
+    ''' jsondict = {'wf':{task1:{...},task2:{...},completed:123,assigned:123,...],...} '''
     jsondict = {}; checklist = []; 
     json_paths = [f.path for f in os.scandir(timestamp_path) if f.name[-5:]=='.json']
     for jsonpath in json_paths:
@@ -24,6 +25,7 @@ def parsejson(timestamp_path):
 
 
 def get_all_workflow_data(rootpath,savedata_path):
+    ''' wfdata = {'wf':{completed:123,assigned:123,(all who results are numbers)},...} '''
     wfdata = {}
     folderpaths = [f.path for f in os.scandir(rootpath) if f.is_dir() and f.name != os.path.basename(savedata_path)]
     for timestamp_path in folderpaths:
@@ -50,6 +52,8 @@ def get_all_targets_mean_std(rootpath,wfdata,savedata_path,filter_graphs=False):
             if 'completed' in wfdata[wf]:
                 skip_graphs = not filter_graphs
                 graph_npys,graph_timestamps,graph_metadata = get_graphs_timestamps_meta(timestamp_path,jsondict,wf,skip_graphs)
+                if graph_timestamps == []:
+                    continue
                 completed_timestamp = wfdata[wf]['completed']
                 target = calculate_target(completed_timestamp,graph_timestamps)
                 if filter_rules(graph_npys,target):
@@ -118,6 +122,7 @@ def filter_rules(graph_npys,target):
     if one input is None then its ignored
     if both are None then returns False
     '''
+    global stats
     if graph_npys is not None:
         if all_graphs_are_empty(graph_npys):
             stats['workflows_where_all_graphs_are_empty'] += 1
@@ -141,7 +146,9 @@ def createdata(timestamp_path,wfdata,Y_mean,Y_std):
     for wf in tqdm(jsondict.keys(),total=len(jsondict)):
         stats['total_workflows'] += 1
         if 'completed' in wfdata[wf]: # if it is completed
-            graph_npys,graph_timestamps,graph_metadata = get_graphs_timestamps_meta(timestamp_path,jsondict,wf)
+            graph_npys,graph_timestamps,graph_metadata = get_graphs_timestamps_meta(timestamp_path,jsondict,wf,skip_graphs=False)
+            if graph_timestamps == []:
+                continue
             completed_timestamp = wfdata[wf]['completed']
             target = calculate_target(completed_timestamp,graph_timestamps)
             if filter_rules(graph_npys,target):
@@ -166,7 +173,17 @@ def calculate_target(completed_timestamp,graph_timestamps):
 
 
 def get_graphs_timestamps_meta(timestamp_path,jsondict,wf,skip_graphs=False):
+    '''
+    graph_npys = []
+    graph_timestamps = [int,int,int] timestamps 
+    graph_metadata = [{'workflow':wf,'task':task},...]
+    '''
+    global stats
     graph_npys = []; graph_timestamps = []; graph_metadata = []; 
+    if not skip_graphs:
+        stats['total_images'] = 0
+    stats['graphs_are_all_empty_error'] = 0
+    stats['there_are_no_timestamps_error'] = 0
     for task,bb in jsondict[wf].items():
         if not isinstance(bb,numbers.Integral): # if is not number (means it's task)
             for strdate,npypath in bb.items(): # can be w/out for
@@ -181,8 +198,12 @@ def get_graphs_timestamps_meta(timestamp_path,jsondict,wf,skip_graphs=False):
                 graphdate_end = datetime.strptime(strdate[30:],'%Y-%m-%d %H:%M:%S.%f')
                 graph_timestamps.append( graphdate_end.timestamp() )
                 graph_metadata.append( {'workflow':wf, 'task':task} )
-    if graph_timestamps == [] or (graph_npys == [] and skip_graphs == False):
-        raise Exception('ERROR: graphs are all empty or there are no timestamps, shouldnt be happening!')
+    if graph_timestamps == []:
+        stats['there_are_no_timestamps_error'] += 1
+        # raise Exception('ERROR: graphs are all empty, shouldnt be happening!')
+    if graph_npys == [] and skip_graphs == False:
+        stats['graphs_are_all_empty_error'] += 1
+        # raise Exception('ERROR: there are no timestamps, shouldnt be happening!')
     if graph_npys != []: graph_npys = np.array(graph_npys)
     else: graph_npys = None
     return graph_npys, graph_timestamps, graph_metadata
@@ -199,7 +220,7 @@ def create_meta_json(METADATA,data_indexes,timestamp_path,folderpath):
             jsondict[ graph_meta['workflow'] ][j] = graph_meta['task']
     timestamp_name = os.path.basename(timestamp_path)
     jsonpath = os.path.join(folderpath,'json',timestamp_name+'.json')
-    if not os.path.exists(jsonpath): os.makedirs(os.path.dirname(jsonpath))
+    if not os.path.exists(os.path.dirname(jsonpath)): os.makedirs(os.path.dirname(jsonpath))
     json.dump( jsondict, open(jsonpath,'w'), indent=4 )
 
 
@@ -226,7 +247,9 @@ def empty_stats():
         'workflows_where_all_graphs_are_empty':0,
         'not_completed_workflows':0,
         'workflows_after_completion':0,
-        'saved_workflows:':0,
+        'saved_workflows':0,
+        'there_are_no_timestamps_error':0,
+        'graphs_are_all_empty_error':0
     }
     return stats
 

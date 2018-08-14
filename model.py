@@ -104,10 +104,10 @@ def fit_model(model, train_indexes, valid_indexes, test_indexes, const, p, verbo
     callbacks.append( PredictData(test_gen,denormalize,log_word='test') )
     callbacks.append( PredictData(valid_gen,denormalize,log_word='valid') )
     history = model.fit_generator(
-                                        generator = train_gen,
+                                        generator = train_gen.generator_function(),
                                         epochs = const['epochs'],
                                         steps_per_epoch = len(train_gen),
-                                        validation_data = valid_gen,
+                                        validation_data = valid_gen.generator_function(),
                                         validation_steps = len(valid_gen),
                                         verbose = verbose,
                                         callbacks = callbacks
