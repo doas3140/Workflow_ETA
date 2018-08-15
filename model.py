@@ -102,7 +102,7 @@ def fit_model(model, train_indexes, valid_indexes, test_indexes, const, p, verbo
     # callbacks.append( tensorboard(tensorboard_logdir_path, batch_size=const['batch_size']) )
     callbacks.append( EvaluateData(test_gen,log_word='test') )
     callbacks.append( PredictData(test_gen,denormalize,log_word='test') )
-    callbacks.append( PredictData(valid_gen,denormalize,log_word='valid') )
+    callbacks.append( PredictData(valid_gen,denormalize,log_word='val') )
     history = model.fit_generator(
                                         generator = train_gen,
                                         epochs = const['epochs'],
@@ -169,8 +169,8 @@ def fit_kfold_model(create_model_fun, data_indexes, test_indexes, const, p, verb
         test_prediction_mean_list.append( history[ 'test_prediction_mean' ] )
         test_prediction_std_list.append( history[ 'test_prediction_std' ] )
 
-        valid_prediction_mean_list.append( history[ 'valid_prediction_mean' ] )
-        valid_prediction_std_list.append( history[ 'valid_prediction_std' ] )
+        valid_prediction_mean_list.append( history[ 'val_prediction_mean' ] )
+        valid_prediction_std_list.append( history[ 'val_prediction_std' ] )
     
     train_fitness,valid_fitness,test_fitness = np.mean( train_fitness_list,axis=0 ), np.mean( valid_fitness_list,axis=0 ), np.mean( test_fitness_list,axis=0 )
     train_std,valid_std,test_std = np.mean( train_std_list,axis=0 ), np.mean( valid_std_list,axis=0 ), np.mean( test_std_list,axis=0 )    
