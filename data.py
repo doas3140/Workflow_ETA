@@ -7,93 +7,30 @@ import os
 import keras
 
 
-if keras.__version__[0] == '2':
-    class DataGenerator(keras.utils.Sequence):
-        def __init__(self, indexes, batch_size, datadir):
-            self.batch_size = batch_size
-            self.indexes = indexes
-            self.batches = []
-            self.index2path = get_index2path_dict(datadir,indexes)
-            self.num = len(self) * batch_size # self.num % batch_size = 0
-            self.on_epoch_start()
+class DataGenerator(keras.utils.Sequence):
+    def __init__(self, indexes, batch_size, datadir):
+        self.batch_size = batch_size
+        self.indexes = indexes
+        self.batches = []
+        self.index2path = get_index2path_dict(datadir,indexes)
+        self.num = len(self) * batch_size # self.num % batch_size = 0
+        self.on_epoch_start()
 
-        def __len__(self): # how many batches
-            return len(self.indexes) // self.batch_size
+    def __len__(self): # how many batches
+        return len(self.indexes) // self.batch_size
 
-        def __getitem__(self, batch_index):
-            X = []
-            Y = np.empty((self.batch_size), dtype=int)
-            for i,index in enumerate(self.batches[batch_index]):
-                x, Y[i] = np.load(self.index2path[index])
-                X.append(x)
-            return pad_sequences(X), Y
+    def __getitem__(self, batch_index):
+        X = []
+        Y = np.empty((self.batch_size), dtype=int)
+        for i,index in enumerate(self.batches[batch_index]):
+            x, Y[i] = np.load(self.index2path[index])
+            X.append(x)
+        return pad_sequences(X), Y
 
-        def on_epoch_start(self):
-            np.random.shuffle(self.indexes)
-            indexes = self.indexes[ :self.num ]
-            self.batches = np.split( indexes, indices_or_sections=len(self) )
-        
-        def generator_function(self):
-            return self
-else: # for keras 1.2
-    class DataGenerator():
-        def __init__(self, indexes, batch_size, datadir):
-            self.batch_size = batch_size
-            self.indexes = indexes
-            self.batches = []
-            self.index2path = get_index2path_dict(datadir,indexes)
-            self.num_batches = len(self.indexes) // self.batch_size
-            self.num = self.num_batches * batch_size # self.num % batch_size = 0
-            self.on_epoch_start()
-
-        def __len__(self): # how many samples
-            return self.num
-
-        def __getitem__(self, batch_index):
-            X = []
-            Y = np.empty((self.batch_size), dtype=int)
-            for i,index in enumerate(self.batches[batch_index]):
-                x, Y[i] = np.load(self.index2path[index])
-                X.append(x)
-            return pad_sequences(X), Y
-
-        def on_epoch_start(self):
-            np.random.shuffle(self.indexes)
-            indexes = self.indexes[ :self.num ]
-            self.batches = np.split( indexes, indices_or_sections=self.num_batches )
-        
-        def generator_function(self):
-            def generator():
-                self.on_epoch_start()
-                for batch_index in range(self.num_batches):
-                    X = []
-                    Y = np.empty((self.batch_size), dtype=int)
-                    for i,index in enumerate(self.batches[batch_index]):
-                        x, Y[i] = np.load(self.index2path[index])
-                        X.append(x)
-                    yield pad_sequences(X), Y
-            return generator()
-
-
-    # def DataGenerator(indexes,batch_size,datadir):
-    #     batch_size = batch_size
-    #     indexes = indexes
-    #     batches = []
-    #     index2path = get_index2path_dict(datadir,indexes)
-    #     num_batches = len(indexes) // batch_size
-    #     num = num_batches * batch_size # self.num % batch_size = 0
-    #     np.random.shuffle(indexes)
-    #     indexes = indexes[ :num ]
-    #     batches = np.split( indexes, indices_or_sections=num_batches )
-    #     def generator():
-    #         for batch_index in range(num_batches):
-    #             X = []
-    #             Y = np.empty((batch_size), dtype=int)
-    #             for i,index in enumerate(batches[batch_index]):
-    #                 x, Y[i] = np.load(index2path[index])
-    #                 X.append(x)
-    #             yield pad_sequences(X), Y
-    #     return generator()
+    def on_epoch_start(self):
+        np.random.shuffle(self.indexes)
+        indexes = self.indexes[ :self.num ]
+        self.batches = np.split( indexes, indices_or_sections=len(self) )
 
 
 def get_index2path_dict(datadir,indexes=[]):
@@ -116,3 +53,44 @@ def split_indexes(datadir,test_split):
     all_indexes = [int(os.path.basename(path)[:-4]) for path in index2path.values()]
     data_indexes,test_indexes,_,_ = train_test_split(all_indexes,all_indexes,test_size=test_split)
     return np.array(data_indexes), np.array(test_indexes)
+
+
+
+# # for keras 1.2
+#     class DataGenerator():
+#         def __init__(self, indexes, batch_size, datadir):
+#             self.batch_size = batch_size
+#             self.indexes = indexes
+#             self.batches = []
+#             self.index2path = get_index2path_dict(datadir,indexes)
+#             self.num_batches = len(self.indexes) // self.batch_size
+#             self.num = self.num_batches * batch_size # self.num % batch_size = 0
+#             self.on_epoch_start()
+
+#         def __len__(self): # how many samples
+#             return self.num
+
+#         def __getitem__(self, batch_index):
+#             X = []
+#             Y = np.empty((self.batch_size), dtype=int)
+#             for i,index in enumerate(self.batches[batch_index]):
+#                 x, Y[i] = np.load(self.index2path[index])
+#                 X.append(x)
+#             return pad_sequences(X), Y
+
+#         def on_epoch_start(self):
+#             np.random.shuffle(self.indexes)
+#             indexes = self.indexes[ :self.num ]
+#             self.batches = np.split( indexes, indices_or_sections=self.num_batches )
+        
+#         def generator_function(self):
+#             def generator():
+#                 self.on_epoch_start()
+#                 for batch_index in range(self.num_batches):
+#                     X = []
+#                     Y = np.empty((self.batch_size), dtype=int)
+#                     for i,index in enumerate(self.batches[batch_index]):
+#                         x, Y[i] = np.load(self.index2path[index])
+#                         X.append(x)
+#                     yield pad_sequences(X), Y
+#             return generator()

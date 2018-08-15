@@ -103,26 +103,15 @@ def fit_model(model, train_indexes, valid_indexes, test_indexes, const, p, verbo
     callbacks.append( EvaluateData(test_gen,log_word='test') )
     callbacks.append( PredictData(test_gen,denormalize,log_word='test') )
     callbacks.append( PredictData(valid_gen,denormalize,log_word='valid') )
-    if keras.__version__[0] == '2':
-        history = model.fit_generator(
-                                            generator = train_gen.generator_function(),
-                                            epochs = const['epochs'],
-                                            steps_per_epoch = len(train_gen),
-                                            validation_data = valid_gen.generator_function(),
-                                            validation_steps = len(valid_gen),
-                                            verbose = verbose,
-                                            callbacks = callbacks
-                                        )
-    else:
-        history = model.fit_generator(
-                                            generator = train_gen.generator_function(),
-                                            nb_epoch = const['epochs'],
-                                            samples_per_epoch = len(train_gen),
-                                            validation_data = valid_gen.generator_function(),
-                                            nb_val_samples = len(valid_gen),
-                                            verbose = verbose,
-                                            callbacks = callbacks
-                                        )
+    history = model.fit_generator(
+                                        generator = train_gen,
+                                        epochs = const['epochs'],
+                                        steps_per_epoch = len(train_gen),
+                                        validation_data = valid_gen,
+                                        validation_steps = len(valid_gen),
+                                        verbose = verbose,
+                                        callbacks = callbacks
+                                    )
     return history.history
 
 
@@ -153,7 +142,7 @@ def p2logdir_path(folder_path,p):
     return os.path.join(folder_path,s)
 
 
-def fit_kfold_model(model, data_indexes, test_indexes, const, p, verbose=1): # index_X - training data (both valid+training) indexes
+def fit_kfold_model(create_model_fun, data_indexes, test_indexes, const, p, verbose=1): # index_X - training data (both valid+training) indexes
     ''' All returned variables are lists of values for each epoch! '''
     valid_fitness_list = []; train_fitness_list = []; test_fitness_list = []; 
     valid_std_list = []; train_std_list = []; test_std_list = []; 
@@ -163,8 +152,9 @@ def fit_kfold_model(model, data_indexes, test_indexes, const, p, verbose=1): # i
 
     for i,(index_train, index_valid) in enumerate(KFold(n_splits=const['kfold_split'],shuffle=True).split(data_indexes)):
         print('Fold {}:'.format(i+1))
-
+        
         train_indexes, valid_indexes = data_indexes[ index_train ], data_indexes[ index_valid ] # KFold returns indexes of data_indexes, this returns indexes of data
+        model = create_model_fun(p,const)
         history = fit_model(model,train_indexes,valid_indexes,test_indexes,const,p,verbose)
         keras_histories.append(history)
 

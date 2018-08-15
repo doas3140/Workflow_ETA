@@ -18,8 +18,7 @@ import pickle
 
 def main():
     data_indexes, test_indexes = split_indexes(const['datadir'],const['test_split'])
-    model = create_model(p,const,print_summary=False)
-    keras_histories,history = fit_kfold_model(model, data_indexes, test_indexes, const, p, verbose=1)
+    keras_histories,history = fit_kfold_model(create_model, data_indexes, test_indexes, const, p, verbose=1)
     save_histories(keras_histories,folderpath=os.path.join(const['results_dir'],'keras_histories'),name='keras_histories')
     save_histories(history,folderpath=os.path.join(const['results_dir'],'plot_histories'),name='plot_history')
     # save_history_plots(history,plotinfo,folderpath=os.path.join(const['plot_dir']))

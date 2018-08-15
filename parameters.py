@@ -3,6 +3,12 @@ from skopt.space import Real, Categorical, Integer
 
 import os
 import json
+import tensorflow as tf
+
+def huber_loss(delta):
+    def loss(y_true,y_pred):
+        return tf.losses.huber_loss(y_true,y_pred,delta=delta)
+    return loss
 
 
 def get_metadata_dict(datadir):
@@ -28,13 +34,13 @@ const_param = {
     'best_model_dir':os.path.join(results_dir,'best_model'),
     'tensorboard_dir':os.path.join(results_dir,'tensorboard'),
     # model param
-    'loss':'mse',
-    'epochs':3,
-    'kfold_split':5,
+    'loss':huber_loss(delta=1.0), # 'mse',
+    'epochs':5,
+    'kfold_split':2,
     'test_split':0.2, # % out of whole dataset
     'fitness_result':'mean_squared_error', # result from keras model.history.history dict. Result will always be from validation set.
     'skopt_n_calls':11,
-    'batch_size':16,
+    'batch_size':4,
     # cnn
     'cnn_activation':'relu',
     'cnn_kernel_h':3,
