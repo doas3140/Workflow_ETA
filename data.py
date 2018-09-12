@@ -21,7 +21,7 @@ class DataGenerator(keras.utils.Sequence):
 
     def __getitem__(self, batch_index):
         X = []
-        Y = np.empty((self.batch_size), dtype=int)
+        Y = np.empty((self.batch_size), dtype=float)
         for i,index in enumerate(self.batches[batch_index]):
             x, Y[i] = np.load(self.index2path[index])
             X.append(x)
@@ -31,6 +31,13 @@ class DataGenerator(keras.utils.Sequence):
         np.random.shuffle(self.indexes)
         indexes = self.indexes[ :self.num ]
         self.batches = np.split( indexes, indices_or_sections=len(self) )
+    
+    def get_y_array(self):
+        Y = []
+        for i in range(len(self)):
+            x,y = self[i]
+            Y.extend(y)
+        return np.array(Y)
 
 
 def get_index2path_dict(datadir,indexes=[]):

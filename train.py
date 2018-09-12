@@ -1,4 +1,4 @@
-
+import setGPU
 from model import fit_kfold_model, create_model
 from parameters import const_param as const
 from parameters import hyperparam_dimensions as dimensions
@@ -22,7 +22,7 @@ def main():
     save_histories(keras_histories,folderpath=os.path.join(const['results_dir'],'keras_histories'),name='keras_histories')
     save_histories(history,folderpath=os.path.join(const['results_dir'],'plot_histories'),name='plot_history')
     # save_history_plots(history,plotinfo,folderpath=os.path.join(const['plot_dir']))
-    model.save(const['best_model_dir'])
+    # model.save(const['best_model_dir'])
 
 def save_histories(histories,folderpath,name):
     if not os.path.exists(folderpath): os.makedirs(folderpath)

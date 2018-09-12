@@ -5,7 +5,7 @@ from parameters import const_param as const
 import keras
 from keras import backend as K
 from keras.models import Model
-from keras.layers import Input, TimeDistributed, Masking
+from keras.layers import Input, TimeDistributed, Masking, Dropout
 from keras.layers import Dense, Flatten, MaxPooling2D, Convolution2D
 from keras.optimizers import Adam
 from keras.callbacks import TensorBoard
@@ -43,6 +43,7 @@ def create_lstm_model(cnn_model,p,const):
         l = RNN(p['lstm_units'])(l)
     for _ in range(p['dense_layers_after_lstm']):
         l = Dense(p['dense_layer_units_after_lstm'])(l)
+        l = Dropout(0.33)(l)
     lstm_output = Dense(1)(l)
     return Model(inputs=lstm_input, outputs=lstm_output)
 
@@ -88,8 +89,16 @@ class PredictData(keras.callbacks.Callback):
     def on_epoch_end(self,batch,logs):
         predictions = self.model.predict_generator(self.generator)
         predictions = self.denormalize(predictions)
-        logs[ self.log_word +'_prediction_mean' ] = predictions.mean()
-        logs[ self.log_word +'_prediction_std' ] = predictions.std()
+        if self.log_word != '':
+                logs[ self.log_word +'_pred'] = predictions
+                logs[ self.log_word +'_prediction_mean' ] = predictions.mean()
+                logs[ self.log_word +'_prediction_std' ] = predictions.std()
+                logs[self.log_word +'_labels'] = self.generator.get_y_array()
+        else:
+                logs[ self.log_word +'pred'] = predictions
+                logs[self.log_word +'labels'] = self.generator.get_y_array()
+                logs[ self.log_word +'prediction_mean' ] = predictions.mean()
+                logs[ self.log_word +'prediction_std' ] = predictions.std()
 
 
 def fit_model(model, train_indexes, valid_indexes, test_indexes, const, p, verbose=1):
@@ -103,6 +112,7 @@ def fit_model(model, train_indexes, valid_indexes, test_indexes, const, p, verbo
     callbacks.append( EvaluateData(test_gen,log_word='test') )
     callbacks.append( PredictData(test_gen,denormalize,log_word='test') )
     callbacks.append( PredictData(valid_gen,denormalize,log_word='val') )
+    callbacks.append( PredictData(train_gen,denormalize,log_word='') )
     history = model.fit_generator(
                                         generator = train_gen,
                                         epochs = const['epochs'],
@@ -169,8 +179,8 @@ def fit_kfold_model(create_model_fun, data_indexes, test_indexes, const, p, verb
         test_prediction_mean_list.append( history[ 'test_prediction_mean' ] )
         test_prediction_std_list.append( history[ 'test_prediction_std' ] )
 
-        valid_prediction_mean_list.append( history[ 'val_prediction_mean' ] )
-        valid_prediction_std_list.append( history[ 'val_prediction_std' ] )
+        valid_prediction_mean_list.append( history[ 'valid_prediction_mean' ] )
+        valid_prediction_std_list.append( history[ 'valid_prediction_std' ] )
     
     train_fitness,valid_fitness,test_fitness = np.mean( train_fitness_list,axis=0 ), np.mean( valid_fitness_list,axis=0 ), np.mean( test_fitness_list,axis=0 )
     train_std,valid_std,test_std = np.mean( train_std_list,axis=0 ), np.mean( valid_std_list,axis=0 ), np.mean( test_std_list,axis=0 )    
