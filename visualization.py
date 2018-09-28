@@ -1,3 +1,6 @@
+'''
+    Some Visualization Functions
+'''
 from skopt.plots import plot_convergence, plot_evaluations, plot_objective
 from matplotlib import pyplot as plt
 

@@ -1,3 +1,7 @@
+'''
+    Training Script
+'''
+
 import setGPU
 from model import fit_kfold_model, create_model
 from parameters import const_param as const

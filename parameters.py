@@ -1,3 +1,7 @@
+'''
+    All Parameters for Training Model
+'''
+
 from keras.layers import SimpleRNN, GRU, LSTM
 from skopt.space import Real, Categorical, Integer
 

@@ -1,3 +1,7 @@
+'''
+    Main Model Functions
+'''
+
 from data import DataGenerator
 from keras.preprocessing.sequence import pad_sequences
 from parameters import const_param as const
@@ -54,6 +58,8 @@ def std_error(y_true,y_pred):
 
 
 def create_model(p,const,print_summary=False):
+    ''' Creates Full Model from CNN and LSTM
+    '''
     cnn_model = create_cnn_model(p,const)
     lstm_model = create_lstm_model(cnn_model,p,const)
     optimizer = Adam(lr=p['learning_rate'])
@@ -238,53 +244,5 @@ def fit_kfold_model(create_model_fun, data_indexes, test_indexes, const, p, verb
            }
 
 
-# def tensorboard(logdir_path, batch_size):
-#     return TensorBoard(
-#                         log_dir = logdir_path,
-#                         histogram_freq = 0,
-#                         batch_size = batch_size,
-#                         write_graph = False,
-#                         write_grads = False,
-#                         write_images = False
-#                       )
-#     # return TensorBoardWrapper(
-#     #                             valid_gen,
-#     #                             nb_steps = len(valid_gen),
-#     #                             log_dir = logdir_path,
-#     #                             histogram_freq = 1,
-#     #                             batch_size = batch_size,
-#     #                             write_graph = True,
-#     #                             write_grads = True
-#     #                          )
 
-# class TensorBoardWrapper(TensorBoard):
-#     '''Sets the self.validation_data property for use with TensorBoard callback.'''
-#     def __init__(self, batch_gen, nb_steps, **kwargs):
-#         super().__init__(**kwargs)
-#         self.batch_gen = batch_gen # The generator.
-#         self.nb_steps = nb_steps     # Number of times to call next() on the generator.
-
-#     def on_epoch_end(self, epoch, logs):
-#         imgs, tags = [], []
-#         for s in range(self.nb_steps):
-#             ib, tb = self.batch_gen[s]
-#             imgs.append(ib)
-#             tags.append(tb)
-#         imgs = pad_sequences(imgs)
-#         tags = np.array(tags)
-#         self.validation_data = [imgs, tags, np.ones(imgs.shape[0]), 0.0]
-#         return super().on_epoch_end(epoch, logs)
-#     # def on_epoch_end(self, epoch, logs):
-#     #     # Fill in the `validation_data` property. Obviously this is specific to how your generator works.
-#     #     # Below is an example that yields images and classification tags.
-#     #     # After it's filled in, the regular on_epoch_end method has access to the validation_data.
-#     #     imgs, tags = None, None
-#     #     for s in range(self.nb_steps):
-#     #         ib, tb = self.batch_gen[s]
-#     #         if imgs is None and tags is None:
-#     #             imgs = np.zeros((self.nb_steps * ib.shape[0], *ib.shape[1:]), dtype=np.float32)
-#     #             tags = np.zeros((self.nb_steps * tb.shape[0], *tb.shape[1:]), dtype=np.uint8)
-#     #         imgs[s * ib.shape[0]:(s + 1) * ib.shape[0]] = ib
-#     #         tags[s * tb.shape[0]:(s + 1) * tb.shape[0]] = tb
-#     #     self.validation_data = [imgs, tags, np.ones(imgs.shape[0]), 0.0]
-#     #     return super().on_epoch_end(epoch, logs)
+#
